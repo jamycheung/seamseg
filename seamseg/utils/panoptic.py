@@ -16,7 +16,14 @@ class PanopticPreprocessing:
 
     def __call__(self, sem_pred, bbx_pred, cls_pred, obj_pred, msk_pred, num_stuff):
         img_size = [sem_pred.size(0), sem_pred.size(1)]
-
+        """
+            sem_pred([1920, 2560])
+            bbx_pred([146, 4])
+            cls_pred([146])
+            obj_pred([146])
+            msk_pred([146, 28, 28])
+            num_stuff 28
+        """
         # Initialize outputs
         occupied = torch.zeros_like(sem_pred, dtype=torch.uint8)
         msk = torch.zeros_like(sem_pred)
@@ -54,7 +61,7 @@ class PanopticPreprocessing:
                 # Add non-intersecting part to output
                 msk_i = msk_i - intersection
                 msk[msk_i] = len(cat)
-                cat.append(cls_i.item() + num_stuff)
+                cat.append(cls_i.item() + num_stuff)        # append instance categories from 28~(28+37)
                 obj.append(obj_i.item())
                 iscrowd.append(0)
 
@@ -74,7 +81,7 @@ class PanopticPreprocessing:
 
             # Add non-intersecting part to output
             msk[msk_i] = len(cat)
-            cat.append(cls_i)
+            cat.append(cls_i)       # append stuff categories
             obj.append(1)
             iscrowd.append(cls_i >= num_stuff)
 

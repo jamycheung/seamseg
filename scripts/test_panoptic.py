@@ -222,7 +222,8 @@ def test(model, dataloader, **varargs):
                 save_function(raw_pred, panoptic_pred, img_info)
 
             # Log batch
-            if varargs["summary"] is not None and (it + 1) % varargs["log_interval"] == 0:
+            # if varargs["summary"] is not None and (it + 1) % varargs["log_interval"] == 0:
+            if (it + 1) % varargs["log_interval"] == 0:
                 logging.iteration(
                     None, "val", 0, 1, 1,
                     it + 1, len(dataloader),
@@ -252,32 +253,57 @@ def save_prediction_image(_, panoptic_pred, img_info, out_dir, colors, num_stuff
     img_name, _ = path.splitext(img_name)
     out_dir = path.join(out_dir, folder)
     ensure_dir(out_dir)
-    out_path = path.join(out_dir, img_name + ".jpg")
+    out_path = path.join(out_dir, img_name + "_pan.jpg")
+    # out_path_pan_raw = path.join(out_dir, img_name + "_pan_raw.jpg")
+    out_path_ins = path.join(out_dir, img_name + "_ins.jpg")
+    out_path_sem = path.join(out_dir, img_name + "_sem.jpg")
+    # out_path_bg = path.join(out_dir, img_name + "_bg.jpg")
 
     # Render semantic
     sem = cat[msk].numpy()
     crowd = iscrowd[msk].numpy()
     sem[crowd == 1] = 255
-
     sem_img = Image.fromarray(colors[sem])
     sem_img = sem_img.resize(img_info["original_size"][::-1])
+    # === Render semantic option 2
+    sem_img.save(out_path_sem)
 
     # Render contours
     is_background = (sem < num_stuff) | (sem == 255)
     msk = msk.numpy()
-    msk[is_background] = 0
-
+    msk_bg = msk.copy()
+    msk_bg[~is_background] = 0
+    msk[is_background] = 0      # remain foreground only
     contours = find_boundaries(msk, mode="outer", background=0).astype(np.uint8) * 255
-    contours = dilation(contours)
-
+    # contours = dilation(contours)
     contours = np.expand_dims(contours, -1).repeat(4, -1)
     contours_img = Image.fromarray(contours, mode="RGBA")
     contours_img = contours_img.resize(img_info["original_size"][::-1])
+
+    # === Render instance with jitter colors
+    ins = cat[msk].numpy()
+    crowd = iscrowd[msk].numpy()
+    ins[crowd == 1] = 255
+    ins_img = Image.fromarray(colors[ins])
+    ins_img = ins_img.resize(img_info["original_size"][::-1])
+    ins_img.save(out_path_ins)
+
+    # === Render semantic option 2
+    # bg = cat[msk_bg].numpy()
+    # crowd = iscrowd[msk_bg].numpy()
+    # bg[crowd == 1] = 255
+    # bg_img = Image.fromarray(colors[bg])
+    # bg_img = bg_img.resize(img_info["original_size"][::-1])
+    # bg_img.save(out_path_bg)
 
     # Compose final image and save
     out = Image.blend(img, sem_img, 0.5).convert(mode="RGBA")
     out = Image.alpha_composite(out, contours_img)
     out.convert(mode="RGB").save(out_path)
+    # === Render raw pan
+    # out = Image.blend(img, sem_img, 1).convert(mode="RGBA")
+    # out = Image.alpha_composite(out, contours_img)
+    # out.convert(mode="RGB").save(out_path_pan_raw)
 
 
 def save_prediction_raw(raw_pred, _, img_info, out_dir):

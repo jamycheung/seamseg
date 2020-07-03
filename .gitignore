@@ -101,3 +101,6 @@ venv.bak/
 
 # other
 .idea/
+*.tar
+scripts/data/
+scripts/logs/

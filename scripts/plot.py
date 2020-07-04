@@ -54,6 +54,7 @@ if __name__ == '__main__':
             data = json.load(js_file)
             for k, v in plts.items():
                 v.append(data[k])
+    json.dump(plts, open('ins_plot.json', 'w'), indent=4)
     # --- plot
     f = plt.figure()
     for k, v in plts.items():

@@ -280,7 +280,7 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     for i, name in enumerate(ins_names):
         ins_count_names[name] = ins_count[i] if i in ins_count else 0
     js_path = path.join(out_dir, img_name + "_count.json")
-    # json.dump(ins_count_names, open(js_path, 'w'), indent=4)
+    json.dump(ins_count_names, open(js_path, 'w'), indent=4)
 
     # Render semantic
     sem = cat[msk].numpy()
@@ -311,7 +311,7 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     ins_img = ins_img.resize(img_info["original_size"][::-1])
     ins_img = ins_img.convert(mode='RGBA')
     ins_img = Image.alpha_composite(ins_img, contours_img)
-    # ins_img.convert(mode="RGB").save(out_path_ins)
+    ins_img.convert(mode="RGB").save(out_path_ins)
 
     # === Render semantic option 2
     # bg = cat[msk_bg].numpy()
@@ -324,7 +324,7 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     # Compose final image and save
     out = Image.blend(img, sem_img, 0.5).convert(mode="RGBA")
     out = Image.alpha_composite(out, contours_img)
-    # out.convert(mode="RGB").save(out_path)
+    out.convert(mode="RGB").save(out_path)
     # === Render raw pan
     # out = Image.blend(img, sem_img, 1).convert(mode="RGBA")
     # out = Image.alpha_composite(out, contours_img)

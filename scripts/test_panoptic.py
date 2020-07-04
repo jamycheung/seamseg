@@ -1,5 +1,6 @@
 import argparse
 import time
+import json
 from collections import OrderedDict
 from functools import partial
 from os import path, mkdir
@@ -188,6 +189,7 @@ def test(model, dataloader, **varargs):
     make_panoptic = varargs["make_panoptic"]
     num_stuff = varargs["num_stuff"]
     save_function = varargs["save_function"]
+    cat_names = varargs["cat_names"]
 
     data_time = time.time()
     for it, batch in enumerate(dataloader):
@@ -219,7 +221,7 @@ def test(model, dataloader, **varargs):
 
                 # Save prediction
                 raw_pred = (sem_pred, bbx_pred, cls_pred, obj_pred, msk_pred)
-                save_function(raw_pred, panoptic_pred, img_info)
+                save_function(raw_pred, panoptic_pred, img_info, cat_names)
 
             # Log batch
             # if varargs["summary"] is not None and (it + 1) % varargs["log_interval"] == 0:
@@ -242,8 +244,19 @@ def ensure_dir(dir_path):
     except FileExistsError:
         pass
 
+def counter(arr):
+    arr = np.array(arr)
+    key = np.unique(arr)
+    result = {}
+    for k in key:
+        mask = (arr == k)
+        arr_new = arr[mask]
+        v = arr_new.size
+        result[k] = v
+    return result
 
-def save_prediction_image(_, panoptic_pred, img_info, out_dir, colors, num_stuff):
+
+def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors, num_stuff):
     msk, cat, obj, iscrowd = panoptic_pred
 
     img = Image.open(img_info["abs_path"])
@@ -258,6 +271,16 @@ def save_prediction_image(_, panoptic_pred, img_info, out_dir, colors, num_stuff
     out_path_ins = path.join(out_dir, img_name + "_ins.jpg")
     out_path_sem = path.join(out_dir, img_name + "_sem.jpg")
     # out_path_bg = path.join(out_dir, img_name + "_bg.jpg")
+
+    # === save panotic pred
+    ins_cat = np.delete(cat[cat > num_stuff], 0)
+    ins_count = counter(ins_cat-num_stuff)
+    ins_names = cat_names[num_stuff:]
+    ins_count_names = {}
+    for i, name in enumerate(ins_names):
+        ins_count_names[name] = ins_count[i] if i in ins_count else 0
+    js_path = path.join(out_dir, img_name + "_count.json")
+    # json.dump(ins_count_names, open(js_path, 'w'), indent=4)
 
     # Render semantic
     sem = cat[msk].numpy()
@@ -286,7 +309,9 @@ def save_prediction_image(_, panoptic_pred, img_info, out_dir, colors, num_stuff
     ins[crowd == 1] = 255
     ins_img = Image.fromarray(colors[ins])
     ins_img = ins_img.resize(img_info["original_size"][::-1])
-    ins_img.save(out_path_ins)
+    ins_img = ins_img.convert(mode='RGBA')
+    ins_img = Image.alpha_composite(ins_img, contours_img)
+    # ins_img.convert(mode="RGB").save(out_path_ins)
 
     # === Render semantic option 2
     # bg = cat[msk_bg].numpy()
@@ -299,14 +324,14 @@ def save_prediction_image(_, panoptic_pred, img_info, out_dir, colors, num_stuff
     # Compose final image and save
     out = Image.blend(img, sem_img, 0.5).convert(mode="RGBA")
     out = Image.alpha_composite(out, contours_img)
-    out.convert(mode="RGB").save(out_path)
+    # out.convert(mode="RGB").save(out_path)
     # === Render raw pan
     # out = Image.blend(img, sem_img, 1).convert(mode="RGBA")
     # out = Image.alpha_composite(out, contours_img)
     # out.convert(mode="RGB").save(out_path_pan_raw)
 
 
-def save_prediction_raw(raw_pred, _, img_info, out_dir):
+def save_prediction_raw(raw_pred, _, img_info, cat_names, out_dir):
     # Prepare folders and paths
     folder, img_name = path.split(img_info["rel_path"])
     img_name, _ = path.splitext(img_name)
@@ -371,7 +396,7 @@ def main(args):
             save_prediction_image, out_dir=args.out_dir, colors=palette, num_stuff=meta["num_stuff"])
     test(model, test_dataloader, device=device, summary=None,
          log_interval=config["general"].getint("log_interval"), save_function=save_function,
-         make_panoptic=panoptic_preprocessing, num_stuff=meta["num_stuff"])
+         make_panoptic=panoptic_preprocessing, num_stuff=meta["num_stuff"], cat_names=meta["categories"])
 
 
 if __name__ == "__main__":

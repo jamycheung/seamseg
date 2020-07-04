@@ -9,7 +9,10 @@ Main system requirements:
 * Linux with GCC 7 or 8
 * PyTorch v1.1.0
 ```bash
-pip install -r requirements.txt
+conda create -n pytorch110 python=3.7 -y
+conda activate pytorch110
+conda install pytorch==1.1.0 torchvision==0.3.0 cudatoolkit=10.0 -c pytorch
+pip install -r requirements.txt --no-cache-dir
 cd seamseg
 python setup.py develop
 ```

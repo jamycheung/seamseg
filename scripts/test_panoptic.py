@@ -272,7 +272,7 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     out_path_sem = path.join(out_dir, img_name + "_sem.jpg")
     # out_path_bg = path.join(out_dir, img_name + "_bg.jpg")
 
-    # === save panotic pred
+    # === save panoptic pred
     ins_cat = np.delete(cat[cat > num_stuff], 0)
     ins_count = counter(ins_cat-num_stuff)
     ins_names = cat_names[num_stuff:]
@@ -290,6 +290,14 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     sem_img = sem_img.resize(img_info["original_size"][::-1])
     # === Render semantic option 2
     sem_img.save(out_path_sem)
+    # === save pixel stats
+    sem_pixel_stats = {}
+    unique, freq = np.unique(sem, return_counts=True)
+    freq = [round(i/sem.size,4) for i in freq]
+    for i, name in enumerate(cat_names):
+        sem_pixel_stats[name] = freq[np.where(unique==i)[-1][-1]] if i in unique else 0.
+    js_path = path.join(out_dir, img_name + "_pixel_stats.json")
+    json.dump(sem_pixel_stats, open(js_path, 'w'), indent=4)
 
     # Render contours
     is_background = (sem < num_stuff) | (sem == 255)

@@ -104,3 +104,5 @@ venv.bak/
 *.tar
 scripts/data/
 scripts/logs/
+*.pdf
+*.png

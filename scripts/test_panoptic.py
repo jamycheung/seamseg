@@ -286,6 +286,9 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     sem = cat[msk].numpy()
     crowd = iscrowd[msk].numpy()
     sem[crowd == 1] = 255
+    #r = [5,9,10,16]
+    #sem = np.where(np.isin(sem, r), sem, 255)
+    # sem[sem!=10]=255
     sem_img = Image.fromarray(colors[sem])
     sem_img = sem_img.resize(img_info["original_size"][::-1])
     # === Render semantic option 2
@@ -315,6 +318,7 @@ def save_prediction_image(_, panoptic_pred, img_info, cat_names, out_dir, colors
     ins = cat[msk].numpy()
     crowd = iscrowd[msk].numpy()
     ins[crowd == 1] = 255
+    #ins[ins!=31]=255    # person only
     ins_img = Image.fromarray(colors[ins])
     ins_img = ins_img.resize(img_info["original_size"][::-1])
     ins_img = ins_img.convert(mode='RGBA')

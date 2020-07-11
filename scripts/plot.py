@@ -169,14 +169,15 @@ def plot_dict_line(d, frame_ids):
         plt.legend()
         # plt.grid()
         # plt.show()
-        f.savefig('./plots/'+id+'_ins_frams_'+sc+'.png', bbox_inches='tight')
+        scene_frame_name = sc+'_'+SCENCE_FRAME[sc][0]+'to'+SCENCE_FRAME[sc][1]
+        f.savefig('./plots/'+id+'_ins_frams_'+scene_frame_name+'.pdf', bbox_inches='tight')
         plt.cla()
         plt.close(f)
     i = 1
     for sc_name, fr_list in frame_ids.items():
         plot_one(sc_name, fr_list, str(i))
         i+=1
-    plot_one('whole', [0, len(d['person'])], '0')
+    # plot_one('whole', [0, len(d['person'])], '0')
 
 
 def plot_stacked_bar(data, series_labels, category_labels=None,
@@ -198,7 +199,7 @@ def plot_stacked_bar(data, series_labels, category_labels=None,
     for i, row_data in enumerate(data):
         color = colors[i] if colors is not None else None
         axes.append(plt.bar(ind, row_data, bottom=cum_size,
-                            label=series_labels[i], color=color, alpha=0.5))
+                            label=series_labels[i], color=color, alpha=0.7))
         cum_size += row_data
 
     if category_labels:
@@ -242,7 +243,8 @@ def plot_dict_bar(d, frame_ids):
             y_label="#instance",
             fr=fr
         )
-        f.savefig('./plots/'+id+'_ins_frams_'+sc+'_bar.png', bbox_inches='tight')
+        scene_frame_name = sc+'_'+SCENCE_FRAME[sc][0]+'to'+SCENCE_FRAME[sc][1]
+        f.savefig('./plots/'+id+'_ins_frams_'+scene_frame_name+'_bar.pdf', bbox_inches='tight')
         plt.cla()
         plt.close(f)
     i = 1
@@ -294,4 +296,4 @@ if __name__ == '__main__':
     # plot_dict(human, "human_ins.png")
     # plot_dict(obj, "object_ins.png")
     plot_dict_bar(mg_thing, frame_ids)
-    # plot_dict_line(mg_thing, frame_ids)
+    plot_dict_line(mg_thing, frame_ids)
